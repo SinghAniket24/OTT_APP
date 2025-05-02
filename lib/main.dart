@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/news_screen.dart';
 import 'screens/home_screen.dart'; 
 import 'screens/profile.dart';
+import 'login_screen.dart';
 
 
 void main() {
@@ -43,7 +44,8 @@ class OTTApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Colors.white),
         ),
       ),
-      home: const MainPage(),
+      home: const LoginScreen(),
+
       debugShowCheckedModeBanner: false,
     );
   }
@@ -60,7 +62,7 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const HomeScreen(),
+     HomeScreen(),
     const Center(child: Text("Subscriptions Page", style: TextStyle(color: Colors.white))),
     const NewsScreen(),
   ];
@@ -147,13 +149,19 @@ class _MainPageState extends State<MainPage> {
               },
             ),
             const Divider(color: Colors.white70),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.white),
-              title: const Text('Logout', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-            ),
+ListTile(
+  leading: const Icon(Icons.logout, color: Colors.white),
+  title: const Text('Logout', style: TextStyle(color: Colors.white)),
+  onTap: () {
+    Navigator.of(context).pop(); // Close the Drawer first
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false, // Remove all previous routes
+    );
+  },
+),
+
             const Divider(color: Colors.white70),
             ListTile(
               leading: const Icon(Icons.more_horiz, color: Colors.white),

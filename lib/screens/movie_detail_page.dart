@@ -1,147 +1,274 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'video_player.dart';
+import 'cast_screen.dart';
 
-class MovieDetailPage extends StatelessWidget {
-  final Movie movie;
+class MovieDetailPage extends StatefulWidget {
+  final movie;
 
   const MovieDetailPage({super.key, required this.movie});
 
   @override
+  _MovieDetailPageState createState() => _MovieDetailPageState();
+}
+
+class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProviderStateMixin {
+  bool _isVideoPlaying = false;
+  bool _isLiked = false;
+
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  double _getRating() {
+    return (5 * (1 + (DateTime.now().millisecondsSinceEpoch % 100) / 100)).toDouble();
+  }
+
+  final String directorName = "Christopher Nolan";
+  final List<String> castList = ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page", "Tom Hardy"];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200), // Slow fade-in duration
+    );
+
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Theme Colors
-    final Color darkBackground = const Color.fromARGB(255, 36, 41, 39);
-    final Color tealAccent = const Color(0xFF116466);
-    final Color sandColor = const Color(0xFFD9B08C);
-    final Color lightSand = const Color(0xFFFFCB9A);
-    final Color paleGreen = const Color(0xFFD1E8E2);
+    final Color darkBackground = const Color(0xFF222831);
+    final Color tealAccent = const Color(0xFF00ADB5);
+    final Color sandColor = const Color(0xFFEEEEEE);
+    final Color highlightColor = const Color(0xFFFF5722);
+    final Color secondaryTextColor = Colors.white70;
+
+    double rating = _getRating();
 
     return Scaffold(
       backgroundColor: darkBackground,
       appBar: AppBar(
         backgroundColor: tealAccent,
         title: Text(
-          movie.title,
-          style: TextStyle(
-            color: paleGreen,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
+          widget.movie.title,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
         ),
         centerTitle: true,
-        iconTheme: IconThemeData(color: paleGreen),
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Movie Poster with Padding
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_isVideoPlaying)
+                MovieVideoPlayer(
+                  videoUrl: "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4",
                 ),
-                child: Image.network(
-                  movie.imageUrl,
-                  width: double.infinity,
-                  height: 280,
-                  fit: BoxFit.cover,
+              if (!_isVideoPlaying)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.network(
+                      widget.movie.imageUrl,
+                      width: double.infinity,
+                      height: 280,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  widget.movie.title,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: sandColor,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Content Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    movie.title,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: sandColor,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Genre Chip
-                  Chip(
-                    backgroundColor: lightSand,
-                    label: Text(
-                      movie.genre,
-                      style: TextStyle(
-                        color: darkBackground,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Chip(
+                      backgroundColor: tealAccent.withOpacity(0.3),
+                      label: Text(
+                        widget.movie.genre,
+                        style: TextStyle(color: tealAccent, fontWeight: FontWeight.w600),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // About the Movie
-                  Text(
-                    'About the Movie',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: paleGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Description
-                  Text(
-                    movie.description,
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.6,
-                      color: paleGreen.withOpacity(0.85),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Watch Now Button
-                  Center(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: tealAccent,
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('Rating', style: TextStyle(fontSize: 12, color: Colors.white60)),
+                        Text(
+                          '${rating.toStringAsFixed(1)} / 10.0',
+                          style: const TextStyle(fontSize: 18, color: Colors.amber),
                         ),
-                        elevation: 8,
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GestureDetector(
+                  onTap: () => setState(() => _isLiked = !_isLiked),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: _isLiked ? Colors.red : Colors.white,
+                        size: 30,
                       ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Feature coming soon!'),
-                            backgroundColor: Colors.black87,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.play_circle_fill, color: Colors.white, size: 28),
-                      label: const Text(
-                        'Watch Now',
-                        style: TextStyle(
-                          fontSize: 18,
+                      const SizedBox(width: 10),
+                      Text(
+                        _isLiked ? 'Liked' : 'Like',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: highlightColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          elevation: 6,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isVideoPlaying = true;
+                          });
+                        },
+                        icon: const Icon(Icons.play_circle_fill, size: 26, color: Colors.white),
+                        label: const Text(
+                          'Watch Now',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          elevation: 6,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CastScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.cast, size: 24, color: Colors.white),
+                        label: const Text(
+                          'Cast to TV',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    const Icon(Icons.movie_creation_outlined, color: Colors.white70),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Director: ",
+                      style: TextStyle(fontWeight: FontWeight.bold, color: sandColor, fontSize: 16),
+                    ),
+                    Text(
+                      directorName,
+                      style: TextStyle(color: secondaryTextColor, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: const [
+                    Icon(Icons.groups, color: Colors.white70),
+                    SizedBox(width: 8),
+                    Text(
+                      "Cast",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: castList.map((cast) {
+                    return Chip(
+                      backgroundColor: darkBackground,
+                      side: BorderSide(color: tealAccent),
+                      label: Text(cast, style: TextStyle(color: sandColor)),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'About the Movie',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: tealAccent),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  widget.movie.description,
+                  style: TextStyle(fontSize: 16, height: 1.6, color: secondaryTextColor),
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );
