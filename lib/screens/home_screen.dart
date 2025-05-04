@@ -3,7 +3,7 @@ import 'movie_detail_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'searchresuts.dart';
-import 'genre_movie_screen.dart'; // Add this import
+import 'genre_movie_screen.dart';
 
 class Movie {
   final String title;
@@ -33,6 +33,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
+  // Enhanced Color Palette
+  final Color darkBackground = const Color(0xFF232B2B);
+  final Color cardDark = const Color(0xFF283634);
+  final Color tealAccent = const Color(0xFF116466);
+  final Color emerald = const Color(0xFF15847D);
+  final Color mint = const Color(0xFFB8FFF9);
+  final Color sandColor = const Color(0xFFD9B08C);
+  final Color paleGreen = const Color(0xFFD1E8E2);
+  final Color lightSand = const Color(0xFFFFCB9A);
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return Movie(
               title: movieData['Title'],
               imageUrl: movieData['Poster'],
-              genre: 'Action', // You can later make this dynamic
+              genre: 'Action',
               description: 'N/A',
               videoUrl:
                   'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
@@ -71,34 +81,29 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  final Color darkBackground = Color.fromARGB(255, 36, 41, 39);
-  final Color tealAccent = Color(0xFF116466);
-  final Color sandColor = Color(0xFFD9B08C);
-  final Color lightSand = Color(0xFFFFCB9A);
-  final Color paleGreen = Color(0xFFD1E8E2);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: darkBackground,
       body: SafeArea(
         child: isLoading
-            ? Center(child: CircularProgressIndicator(color: tealAccent))
+            ? Center(child: CircularProgressIndicator(color: emerald))
             : ListView(
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   _buildSearchBar(),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
                   _buildPageView(movies, context),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 22),
                   _buildSectionTitle("Genres"),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   _buildGenreList(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 22),
                   _buildSlider("Trending", movies, context),
                   _buildSlider("Recommended", movies, context),
                   _buildSlider("Recently Added", movies, context),
+                  const SizedBox(height: 18),
                 ],
               ),
       ),
@@ -107,31 +112,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TextField(
-        controller: _searchController,
-        style: const TextStyle(color: Colors.white),
-        textInputAction: TextInputAction.search,
-        onSubmitted: (query) {
-          if (query.trim().isNotEmpty) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SearchResultsPage(searchQuery: query),
-              ),
-            );
-          }
-        },
-        decoration: InputDecoration(
-          hintText: 'Search movies, shows...',
-          hintStyle: TextStyle(color: paleGreen),
-          prefixIcon: Icon(Icons.search, color: sandColor),
-          filled: true,
-          fillColor: tealAccent.withOpacity(0.1),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Material(
+        color: cardDark,
+        elevation: 3,
+        borderRadius: BorderRadius.circular(32),
+        child: TextField(
+          controller: _searchController,
+          style: TextStyle(color: mint, fontWeight: FontWeight.w500),
+          textInputAction: TextInputAction.search,
+          onSubmitted: (query) {
+            if (query.trim().isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchResultsPage(searchQuery: query),
+                ),
+              );
+            }
+          },
+          decoration: InputDecoration(
+            hintText: 'Search movies, shows...',
+            hintStyle: TextStyle(color: paleGreen.withOpacity(0.7)),
+            prefixIcon: Icon(Icons.search, color: emerald),
+            filled: true,
+            fillColor: Colors.transparent,
+            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(32),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
       ),
@@ -140,30 +150,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: sandColor,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+      child: Row(
+        children: [
+          Container(
+            width: 5,
+            height: 24,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(3),
+              gradient: LinearGradient(
+                colors: [emerald, tealAccent],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            title,
+            style: TextStyle(
+              color: mint,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.1,
+              shadows: [
+                Shadow(
+                  color: emerald.withOpacity(0.15),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPageView(List<Movie> movies, BuildContext context) {
     return SizedBox(
-      height: 250,
+      height: 260,
       child: PageView.builder(
         itemCount: movies.length,
-        controller: PageController(viewportFraction: 0.8),
+        controller: PageController(viewportFraction: 0.78),
         itemBuilder: (context, index) {
           final movie = movies[index];
           return AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             curve: Curves.easeInOut,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 10),
             child: GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -173,21 +208,39 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               child: Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Hero(
-                      tag: movie.title,
-                      child: Image.network(
-                        movie.imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        loadingBuilder: (context, child, progress) {
-                          return progress == null
-                              ? child
-                              : Center(
-                                  child:
-                                      CircularProgressIndicator(color: tealAccent));
-                        },
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      gradient: LinearGradient(
+                        colors: [tealAccent.withOpacity(0.12), cardDark],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: emerald.withOpacity(0.16),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: Hero(
+                        tag: movie.title,
+                        child: Image.network(
+                          movie.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 260,
+                          loadingBuilder: (context, child, progress) {
+                            return progress == null
+                                ? child
+                                : Center(
+                                    child: CircularProgressIndicator(
+                                        color: emerald));
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -197,24 +250,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     right: 0,
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius:
-                            BorderRadius.vertical(bottom: Radius.circular(20)),
+                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.7)
+                            cardDark.withOpacity(0.95),
                           ],
                         ),
                       ),
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(14),
                       child: Text(
                         movie.title,
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                          color: mint,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              color: emerald.withOpacity(0.2),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -238,12 +296,11 @@ class _HomeScreenState extends State<HomeScreen> {
       {'img': 'https://picsum.photos/200/200?random=104', 'label': 'Comedy'},
       {'img': 'https://picsum.photos/200/200?random=105', 'label': 'Thriller'},
     ];
-
     return SizedBox(
-      height: 90,
+      height: 92,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         itemCount: genres.length,
         itemBuilder: (context, index) {
           return _buildGenreItem(genres[index]['img']!, genres[index]['label']!);
@@ -266,24 +323,24 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.only(right: 14),
         child: Column(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 62,
+              height: 62,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [tealAccent.withOpacity(0.3), darkBackground],
+                  colors: [emerald, tealAccent, cardDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: tealAccent.withOpacity(0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
+                    color: mint.withOpacity(0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -295,8 +352,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               label,
               style: TextStyle(
-                color: paleGreen,
-                fontSize: 13,
+                color: mint,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                shadows: [
+                  Shadow(
+                    color: emerald.withOpacity(0.18),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
             ),
           ],
@@ -310,13 +374,19 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           child: Text(
             title,
             style: TextStyle(
-              color: sandColor,
+              color: emerald,
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  color: emerald.withOpacity(0.18),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
         ),
@@ -324,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 220,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
@@ -336,16 +406,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 child: Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  width: 140,
+                  margin: const EdgeInsets.only(right: 14),
+                  width: 145,
                   decoration: BoxDecoration(
-                    color: tealAccent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: tealAccent.withOpacity(0.3)),
+                    gradient: LinearGradient(
+                      colors: [cardDark, tealAccent.withOpacity(0.09)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: emerald.withOpacity(0.22)),
                     boxShadow: [
                       BoxShadow(
-                        color: tealAccent.withOpacity(0.2),
-                        blurRadius: 8,
+                        color: emerald.withOpacity(0.13),
+                        blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -353,23 +427,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     children: [
                       ClipRRect(
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(18)),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                         child: Image.network(
                           item.imageUrl,
-                          height: 150,
+                          height: 140,
                           width: double.infinity,
                           fit: BoxFit.cover,
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         child: Text(
                           item.title,
                           style: TextStyle(
-                            color: paleGreen,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                            color: mint,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            shadows: [
+                              Shadow(
+                                color: emerald.withOpacity(0.13),
+                                blurRadius: 2,
+                              ),
+                            ],
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

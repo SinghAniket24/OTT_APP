@@ -42,9 +42,10 @@ dependencies:
   google_fonts: ^6.2.1
   shimmer: ^3.0.0
   cached_network_image: ^3.4.1
-  better_player: ^0.0.84
+  # better_player: ^0.0.84
   chewie: ^1.11.3
   subtitle_wrapper_package: ^2.2.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,10 @@ import 'screens/news_screen.dart';
 import 'screens/home_screen.dart'; 
 import 'screens/profile.dart';
 import 'login_screen.dart';
+import 'screens/subscriptions.dart';
+import 'screens/library_page.dart';
+
+
 
 
 void main() {
@@ -63,8 +67,9 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> _pages = [
      HomeScreen(),
-    const Center(child: Text("Subscriptions Page", style: TextStyle(color: Colors.white))),
+    const SubscriptionPage(),
     const NewsScreen(),
+     LibraryPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -175,26 +180,31 @@ ListTile(
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: Colors.black.withOpacity(0.3),
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.subscriptions),
-            label: "Subscriptions",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article),
-            label: "News",
-          ),
-        ],
-      ),
+  currentIndex: _selectedIndex,
+  onTap: _onItemTapped,
+  backgroundColor: Colors.black.withOpacity(0.3),
+  selectedFontSize: 12,
+  unselectedFontSize: 11,
+  items: const [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home),
+      label: "Home",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.subscriptions),
+      label: "Subscriptions",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.article),
+      label: "News",
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.video_library),
+      label: "Library", // 👈 new tab
+    ),
+  ],
+),
+
     );
   }
 }
