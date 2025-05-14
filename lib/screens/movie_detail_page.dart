@@ -3,6 +3,7 @@ import 'video_player.dart';
 import 'cast_screen.dart';
 import 'library_page.dart';
 import 'watchlist_manager.dart';
+import 'dart:ui';
 
 class MovieDetailPage extends StatefulWidget {
   final movie;
@@ -97,7 +98,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
             children: [
               if (_isVideoPlaying)
                 MovieVideoPlayer(
-                  videoUrl: "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4",
+                  videoUrl: " https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4",
+                  // https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4
                 ),
               if (!_isVideoPlaying)
                 Padding(
@@ -114,29 +116,76 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
                           ),
                         ],
                       ),
-                      child: Image.network(
-                        widget.movie.imageUrl,
-                        width: double.infinity,
-                        height: 260,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: double.infinity,
-                          height: 260,
-                          color: cardDark,
-                          child: const Center(
-                            child: Icon(Icons.broken_image, color: Colors.white38, size: 60),
-                          ),
-                        ),
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Container(
-                            width: double.infinity,
-                            height: 260,
-                            color: cardDark,
-                            child: const Center(child: CircularProgressIndicator()),
-                          );
-                        },
-                      ),
+                      // child: Image.network(
+                      //   widget.movie.imageUrl,
+                      //   width: double.infinity,
+                      //   height: 260,
+                      //  fit: BoxFit.contain,
+                      //   errorBuilder: (context, error, stackTrace) => Container(
+                      //     width: double.infinity,
+                      //     height: 260,
+                      //     color: cardDark,
+                      //     child: const Center(
+                      //       child: Icon(Icons.broken_image, color: Colors.white38, size: 60),
+                      //     ),
+                      //   ),
+                      //   loadingBuilder: (context, child, progress) {
+                      //     if (progress == null) return child;
+                      //     return Container(
+                      //       width: double.infinity,
+                      //       height: 260,
+                      //       color: cardDark,
+                      //       child: const Center(child: CircularProgressIndicator()),
+                      //     );
+                      //   },
+                      // ),
+                     child: Stack(
+  children: [
+    // Blurred, darkened background image
+    Positioned.fill(
+      child: Image.network(
+        widget.movie.imageUrl,
+        fit: BoxFit.cover,
+        color: Colors.black.withOpacity(0.4),
+        colorBlendMode: BlendMode.darken,
+      ),
+    ),
+    Positioned.fill(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(color: Colors.transparent),
+      ),
+    ),
+    // Foreground image (always fully visible)
+    Center(
+      child: Image.network(
+        widget.movie.imageUrl,
+        width: double.infinity,
+        height: 260,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Container(
+          width: double.infinity,
+          height: 260,
+          color: cardDark,
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.white38, size: 60),
+          ),
+        ),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Container(
+            width: double.infinity,
+            height: 260,
+            color: cardDark,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+      ),
+    ),
+  ],
+),
+
+
                     ),
                   ),
                 ),
@@ -384,3 +433,4 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
     );
   }
 }
+

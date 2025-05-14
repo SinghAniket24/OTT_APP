@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'movie_detail_page.dart';
+import 'series_detail_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'searchresuts.dart';
 import 'genre_movie_screen.dart';
 
+// Movie class
 class Movie {
   final String title;
   final String imageUrl;
@@ -21,6 +23,27 @@ class Movie {
   });
 }
 
+// Series class (separate from Movie)
+class Series {
+  final String title;
+  final String imageUrl;
+  final String genre;
+  final String description;
+  final String videoUrl;
+  final int seasons;
+  final int episodes;
+
+  Series({
+    required this.title,
+    required this.imageUrl,
+    required this.genre,
+    required this.description,
+    required this.videoUrl,
+    required this.seasons,
+    required this.episodes,
+  });
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -30,6 +53,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Movie> movies = [];
+  List<Series> seriesList = [];
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -47,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     fetchMovies();
+    fetchSeries();
   }
 
   Future<void> fetchMovies() async {
@@ -63,8 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
               imageUrl: movieData['Poster'],
               genre: 'Action',
               description: 'N/A',
-              videoUrl:
-                  'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
+              videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
             );
           }).toList();
           isLoading = false;
@@ -77,6 +101,39 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       setState(() {
         isLoading = false;
+      });
+    }
+  }
+
+  // Updated: Fetch series from OMDb API
+  Future<void> fetchSeries() async {
+    final url = 'http://www.omdbapi.com/?s=pokemon&type=series&apikey=e23f75c3';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      if (data['Response'] == 'True') {
+        setState(() {
+          seriesList = (data['Search'] as List).map((seriesData) {
+            return Series(
+              title: seriesData['Title'] ?? '',
+              imageUrl: seriesData['Poster'] ?? '',
+              genre: 'N/A', // OMDb search API does not provide genre
+              description: 'N/A', // OMDb search API does not provide description
+              videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
+              seasons: 0, // Not available in search API
+              episodes: 0, // Not available in search API
+            );
+          }).toList();
+        });
+      } else {
+        setState(() {
+          seriesList = [];
+        });
+      }
+    } else {
+      setState(() {
+        seriesList = [];
       });
     }
   }
@@ -103,6 +160,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSlider("Trending", movies, context),
                   _buildSlider("Recommended", movies, context),
                   _buildSlider("Recently Added", movies, context),
+                  const SizedBox(height: 18),
+                  _buildSeriesSection(), // <---- Series Section Added Here
                   const SizedBox(height: 18),
                 ],
               ),
@@ -237,8 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             return progress == null
                                 ? child
                                 : Center(
-                                    child: CircularProgressIndicator(
-                                        color: emerald));
+                                    child: CircularProgressIndicator(color: emerald));
                           },
                         ),
                       ),
@@ -410,49 +468,104 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 145,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [cardDark, tealAccent.withOpacity(0.09)],
+                      colors: [cardDark, tealAccent.withOpacity(0.18)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: emerald.withOpacity(0.22)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: emerald.withOpacity(0.13),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: BorderRadius.circular(16),
                         child: Image.network(
                           item.imageUrl,
                           height: 140,
-                          width: double.infinity,
+                          width: 145,
                           fit: BoxFit.cover,
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8.0),
                         child: Text(
                           item.title,
                           style: TextStyle(
                             color: mint,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            shadows: [
-                              Shadow(
-                                color: emerald.withOpacity(0.13),
-                                blurRadius: 2,
-                              ),
-                            ],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // The series section builder (unchanged, just for completeness)
+  Widget _buildSeriesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle("Series"),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 220,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            itemCount: seriesList.length,
+            itemBuilder: (context, index) {
+              final series = seriesList[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => SeriesDetailPage(series: series)),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 14),
+                  width: 145,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [cardDark, tealAccent.withOpacity(0.18)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          series.imageUrl,
+                          height: 140,
+                          width: 145,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          series.title,
+                          style: TextStyle(
+                            color: mint,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

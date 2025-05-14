@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MovieVideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -32,9 +37,16 @@ class _MovieVideoPlayerState extends State<MovieVideoPlayer> {
       _videoPlayerController = VideoPlayerController.network(widget.videoUrl);
       await _videoPlayerController.initialize();
 
+      // Resume from last watched
+      final prefs = await SharedPreferences.getInstance();
+      final lastPosition = prefs.getInt(widget.videoUrl) ?? 0;
+      if (lastPosition > 0) {
+        _videoPlayerController.seekTo(Duration(seconds: lastPosition));
+      }
+
       _chewieController = ChewieController(
         videoPlayerController: _videoPlayerController,
-        autoPlay: false,
+        autoPlay: true,
         looping: false,
         showControls: _showControls,
         allowFullScreen: true,
@@ -43,12 +55,56 @@ class _MovieVideoPlayerState extends State<MovieVideoPlayer> {
         placeholder: Container(color: Colors.black),
       );
 
+      // Save progress every second
+      _videoPlayerController.addListener(() async {
+        final prefs = await SharedPreferences.getInstance();
+        final currentPosition = _videoPlayerController.value.position.inSeconds;
+        await prefs.setInt(widget.videoUrl, currentPosition);
+      });
+
       setState(() => _isLoading = false);
     } catch (e) {
       setState(() {
         _errorMsg = "Failed to load video: $e";
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _downloadVideo() async {
+    try {
+      final status = await Permission.storage.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Storage permission denied')),
+        );
+        return;
+      }
+
+      final dir = await getExternalStorageDirectory();
+      final path = '${dir!.path}/downloaded_video.mp4';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Downloading...')),
+      );
+
+      await Dio().download(
+        widget.videoUrl,
+        path,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            debugPrint("Downloading: ${(received / total * 100).toStringAsFixed(0)}%");
+          }
+        },
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Video saved at $path')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download failed: $e')),
+      );
     }
   }
 
@@ -109,14 +165,15 @@ class _MovieVideoPlayerState extends State<MovieVideoPlayer> {
           aspectRatio: _videoPlayerController.value.aspectRatio,
           child: Chewie(controller: _chewieController!),
         ),
-        // Subtitle button placed at the top-left corner
+
+        // Subtitle button
         Positioned(
           top: 12,
           left: 12,
           child: GestureDetector(
             onTap: _showSubtitleMenu,
             child: Visibility(
-              visible: _showControls, // Subtitle button hides with other controls
+              visible: _showControls,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.black54,
@@ -124,6 +181,26 @@ class _MovieVideoPlayerState extends State<MovieVideoPlayer> {
                 ),
                 padding: const EdgeInsets.all(8),
                 child: const Icon(Icons.closed_caption, color: Colors.white, size: 26),
+              ),
+            ),
+          ),
+        ),
+
+        // Download button
+        Positioned(
+          top: 12,
+          right: 12,
+          child: GestureDetector(
+            onTap: _downloadVideo,
+            child: Visibility(
+              visible: _showControls,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: const Icon(Icons.download, color: Colors.white, size: 26),
               ),
             ),
           ),

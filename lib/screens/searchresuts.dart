@@ -1,8 +1,9 @@
-import 'dart:async'; // Add this for Timer
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'movie_detail_page.dart';
+import 'home_screen.dart'; // <-- Use the Movie class from here
 
 class SearchResultsPage extends StatefulWidget {
   final String searchQuery;
@@ -235,20 +236,4 @@ class _SearchResultsPageState extends State<SearchResultsPage> with TickerProvid
       ),
     );
   }
-}
-
-class Movie {
-  final String title;
-  final String imageUrl;
-  final String genre;
-  final String description;
-  final String videoUrl;
-
-  Movie({
-    required this.title,
-    required this.imageUrl,
-    required this.genre,
-    required this.description,
-    required this.videoUrl,
-  });
 }
