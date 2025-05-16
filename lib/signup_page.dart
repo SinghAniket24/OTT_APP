@@ -1,9 +1,144 @@
 import 'package:flutter/material.dart';
-import 'main.dart';
-import 'login_screen.dart'; // Import Login page
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'main.dart'; 
+import 'login_screen.dart';
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
+
+  @override
+  State<SignUpPage> createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
+  final aadharController = TextEditingController();
+  final phoneController = TextEditingController();
+
+  final auth = FirebaseAuth.instance;
+  final firestore = FirebaseFirestore.instance;
+
+  // Regex patterns
+  final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  final RegExp phoneRegex = RegExp(r'^[6-9]\d{9}$');
+  final RegExp aadharRegex = RegExp(r'^\d{12}$');
+  // final RegExp passwordRegex = RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$'); // At least 8 chars, 1 letter, 1 digit
+
+  void signUpUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmController.text;
+    final aadhar = aadharController.text.trim();
+    final phone = phoneController.text.trim();
+
+    // Validation: All fields required
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty || aadhar.isEmpty || phone.isEmpty) {
+      _showSnackBar("All fields are required");
+      return;
+    }
+
+    // Email validation
+    if (!emailRegex.hasMatch(email)) {
+      _showSnackBar("Enter a valid email address");
+      return;
+    }
+
+    // Phone validation (Indian mobile numbers)
+    if (!phoneRegex.hasMatch(phone)) {
+      _showSnackBar("Enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
+    // Aadhar validation (12 digits)
+    if (!aadharRegex.hasMatch(aadhar)) {
+      _showSnackBar("Enter a valid 12-digit Aadhar number");
+      return;
+    }
+
+    // Password match validation
+    if (password != confirmPassword) {
+      _showSnackBar("Passwords do not match");
+      return;
+    }
+
+    // Password strength validation (optional, uncomment to use)
+    // if (!passwordRegex.hasMatch(password)) {
+    //   _showSnackBar("Password must be at least 8 characters, include a letter and a number");
+    //   return;
+    // }
+
+    try {
+      UserCredential userCred = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await firestore.collection("users").doc(userCred.user!.uid).set({
+        "uid": userCred.user!.uid,
+        "email": email,
+        "aadhar": aadhar,
+        "phone": phone,
+      });
+
+      _showSnackBar("Sign up successful!");
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainPage()),
+      );
+    } catch (e) {
+      _showSnackBar("Error: ${e.toString()}");
+    }
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        _showSnackBar("Google sign-in cancelled.");
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      UserCredential userCred = await auth.signInWithCredential(credential);
+
+      DocumentSnapshot userDoc = await firestore.collection("users").doc(userCred.user!.uid).get();
+
+      if (!userDoc.exists) {
+        await firestore.collection("users").doc(userCred.user!.uid).set({
+          "uid": userCred.user!.uid,
+          "email": userCred.user!.email,
+          "aadhar": "", // Prompt for this later if needed
+          "phone": userCred.user!.phoneNumber ?? "",
+        });
+      }
+
+      _showSnackBar("Signed up with Google!");
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainPage()),
+      );
+    } catch (e) {
+      _showSnackBar("Google Sign-In Error: ${e.toString()}");
+    }
+  }
+
+  void _showSnackBar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,13 +146,8 @@ class SignUpPage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'background.jpg', 
-            fit: BoxFit.cover,
-          ),
-          Container(
-            color: Colors.black.withOpacity(0.6),
-          ),
+          Image.asset('background.jpg', fit: BoxFit.cover),
+          Container(color: Colors.black.withOpacity(0.6)),
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -41,92 +171,46 @@ class SignUpPage extends StatelessWidget {
                     const Text(
                       'SignUp',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 24),
-
-                    // Existing TextFields for sign-up form
-                    const TextField(
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Enter username or email id',
-                        hintStyle: TextStyle(color: Colors.white54),
-                        filled: true,
-                        fillColor: Colors.white12,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                    TextField(
+                      controller: emailController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: inputDecoration("Enter username or email id"),
                     ),
                     const SizedBox(height: 16),
-                    const TextField(
+                    TextField(
+                      controller: passwordController,
                       obscureText: true,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Enter password',
-                        hintStyle: TextStyle(color: Colors.white54),
-                        filled: true,
-                        fillColor: Colors.white12,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: inputDecoration("Enter password"),
                     ),
                     const SizedBox(height: 16),
-                    const TextField(
+                    TextField(
+                      controller: confirmController,
                       obscureText: true,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Confirm password',
-                        hintStyle: TextStyle(color: Colors.white54),
-                        filled: true,
-                        fillColor: Colors.white12,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: inputDecoration("Confirm password"),
                     ),
                     const SizedBox(height: 16),
-                    const TextField(
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Enter Aadhar card details',
-                        hintStyle: TextStyle(color: Colors.white54),
-                        filled: true,
-                        fillColor: Colors.white12,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                    TextField(
+                      controller: aadharController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: inputDecoration("Enter Aadhar card details"),
+                      keyboardType: TextInputType.number,
+                      maxLength: 12,
                     ),
                     const SizedBox(height: 16),
-                    const TextField(
+                    TextField(
+                      controller: phoneController,
                       keyboardType: TextInputType.phone,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: '+91',
-                        hintStyle: TextStyle(color: Colors.white54),
-                        filled: true,
-                        fillColor: Colors.white12,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: inputDecoration("+91"),
+                      maxLength: 10,
                     ),
-
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -134,79 +218,56 @@ class SignUpPage extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
+                              borderRadius: BorderRadius.circular(30)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        onPressed: () {
-                          // After signup, navigate to MainPage
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const MainPage()),
-                          );
-                        },
-                        child: const Text(
-                          'SIGN UP',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        onPressed: signUpUser,
+                        child: const Text('SIGN UP',
+                            style: TextStyle(
+                                fontSize: 16, color: Colors.white)),
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          "Already have an account? ",
-                          style: TextStyle(color: Colors.white70),
-                        ),
+                        const Text("Already have an account? ",
+                            style: TextStyle(color: Colors.white70)),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LoginScreen()),
-                            );
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const LoginScreen()));
                           },
-                          child: const Text(
-                            "Login",
-                            style: TextStyle(
-                              color: Colors.blueAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          child: const Text("Login",
+                              style: TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
-
-                    // Sign in with Google button placed at the end
                     GestureDetector(
-                      onTap: () {
-                        // TODO: Add Google Sign-In logic
-                      },
+                      onTap: signInWithGoogle,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30)),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset(
-                              'google_logo.jpg', 
-                              height: 24,
-                              width: 24,
-                            ),
+                            Image.asset('google_logo.jpg',
+                                height: 24, width: 24),
                             const SizedBox(width: 10),
-                            const Text(
-                              "Sign up with Google",
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
+                            const Text("Sign up with Google",
+                                style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16)),
                           ],
                         ),
                       ),
@@ -218,6 +279,21 @@ class SignUpPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white54),
+      filled: true,
+      fillColor: Colors.white12,
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(30)),
+        borderSide: BorderSide.none,
       ),
     );
   }

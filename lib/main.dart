@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'dart:math';
+import 'package:firebase_core/firebase_core.dart';
 
 // Import your screens here
 import 'screens/news_screen.dart';
@@ -14,13 +15,25 @@ import 'dart:ui';
 import 'screens/settings.dart';
 import 'contact.dart';
 import 'chatbot_page.dart'; 
+
 // import 'screens/games_page.dart'; 
 
 
 
 
-void main() {
-   
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyDa6dT-xfaCdnMPPMbTd4yI80v6JqRewU4",
+      authDomain: "ott-platform-5bb8a.firebaseapp.com",
+      projectId: "ott-platform-5bb8a",
+      storageBucket: "ott-platform-5bb8a.firebasestorage.app",
+      messagingSenderId: "612360827492",
+      appId: "1:612360827492:web:684e5a5f3d61c50f496571",
+      measurementId: "G-TXNV05T74J",
+    ),
+  );
 
   runApp(const OTTApp());
 }

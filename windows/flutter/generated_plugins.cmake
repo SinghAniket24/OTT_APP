@@ -4,9 +4,12 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   bonsoir_windows
+  cloud_firestore
   connectivity_plus
   desktop_drop
   file_selector_windows
+  firebase_auth
+  firebase_core
   media_kit_video
   permission_handler_windows
   record_windows
