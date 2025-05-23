@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert'; // For JSON encoding
+import 'package:http_parser/http_parser.dart'; // For MediaType
 
 class ContactPage extends StatefulWidget {
   @override
-  State<ContactPage> createState() => _ContactPageState();
+  State createState() => _ContactPageState();
 }
 
 class _ContactPageState extends State<ContactPage> {
@@ -16,7 +19,6 @@ class _ContactPageState extends State<ContactPage> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _websiteController = TextEditingController();
-
   final _titleController = TextEditingController();
   final _genreController = TextEditingController();
   final _durationController = TextEditingController();
@@ -24,6 +26,7 @@ class _ContactPageState extends State<ContactPage> {
   final _trailerController = TextEditingController();
 
   PlatformFile? _videoFile;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -40,7 +43,7 @@ class _ContactPageState extends State<ContactPage> {
     super.dispose();
   }
 
-  Future<void> _pickVideoFile() async {
+  Future _pickVideoFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['mp4', 'mov', 'avi'],
@@ -57,20 +60,57 @@ class _ContactPageState extends State<ContactPage> {
     }
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      if (_videoFile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please upload a sample video.')),
-        );
-        return;
-      }
-      // TODO: Implement your form submission logic here.
+Future<void> _submitForm() async {
+  if (!_formKey.currentState!.validate()) return;
+
+  setState(() {
+    _isSubmitting = true;
+  });
+
+  try {
+    var uri = Uri.parse('http://localhost:5000/api/submit'); // Change if deployed
+    var response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'companyName': _companyNameController.text,
+        'contactPerson': _contactPersonController.text,
+        'email': _emailController.text,
+        'phone': _phoneController.text,
+        'website': _websiteController.text,
+        'title': _titleController.text,
+        'genre': _genreController.text,
+        'duration': _durationController.text,
+        'synopsis': _synopsisController.text,
+        'trailer': _trailerController.text,
+        // No 'video' field for now
+      }),
+    );
+
+    if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Form submitted!')),
+        SnackBar(content: Text('Form submitted successfully!')),
+      );
+      _formKey.currentState!.reset();
+      setState(() {
+        _videoFile = null;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Submission failed: ${response.body}')),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  } finally {
+    setState(() {
+      _isSubmitting = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -154,8 +194,17 @@ class _ContactPageState extends State<ContactPage> {
                 SizedBox(
                   width: 220,
                   child: ElevatedButton.icon(
-                    onPressed: _submitForm,
-                    icon: Icon(Icons.send_rounded, color: Colors.white),
+                    onPressed: _isSubmitting ? null : _submitForm,
+                    icon: _isSubmitting
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : Icon(Icons.send_rounded, color: Colors.white),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF116466),
                       padding: EdgeInsets.symmetric(vertical: 16),
@@ -166,7 +215,7 @@ class _ContactPageState extends State<ContactPage> {
                       ),
                     ),
                     label: Text(
-                      'Submit',
+                      _isSubmitting ? 'Submitting...' : 'Submit',
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 18,

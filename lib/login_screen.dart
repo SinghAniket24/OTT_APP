@@ -314,4 +314,3 @@ class AppEntry extends StatelessWidget {
     );
   }
 }
-2

@@ -3,6 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
 
 // Import your screens here
 import 'screens/news_screen.dart';
@@ -14,7 +15,8 @@ import 'screens/library_page.dart';
 import 'dart:ui';
 import 'screens/settings.dart';
 import 'contact.dart';
-import 'chatbot_page.dart'; 
+import 'chatbot_page.dart';
+import 'screens/chat_page.dart' ;
 
 // import 'screens/games_page.dart'; 
 
@@ -22,6 +24,9 @@ import 'chatbot_page.dart';
 
 
 void main() async {
+  SendbirdChat.init(appId: '5D630797-111E-4F37-B734-8279516F46AB');
+
+
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: const FirebaseOptions(
@@ -102,6 +107,10 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
     const SubscriptionPage(),
     const NewsScreen(),
     LibraryPage(),
+//      ChatPage(
+//     userId: "test_user_2",  // Your user ID for testing
+//     peerId: "test_user_1",  // The user you want to chat with
+//   ),
     // GamesPage(),
     
   ];
@@ -305,6 +314,11 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
                   icon: Icon(Icons.video_library),
                   label: "Library",
                 ),
+                 BottomNavigationBarItem(
+                  icon: Icon(Icons.chat_bubble),
+                  label: "Chat",
+                ),
+
 
 
               ],
