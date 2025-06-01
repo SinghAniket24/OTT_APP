@@ -17,6 +17,7 @@ import 'screens/settings.dart';
 import 'contact.dart';
 import 'chatbot_page.dart';
 import 'screens/chat_page.dart' ;
+import 'screens/badges_dashboard.dart';
 
 // import 'screens/games_page.dart'; 
 
@@ -107,11 +108,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
     const SubscriptionPage(),
     const NewsScreen(),
     LibraryPage(),
-//      ChatPage(
-//     userId: "test_user_2",  // Your user ID for testing
-//     peerId: "test_user_1",  // The user you want to chat with
-//   ),
-    // GamesPage(),
+    BadgeDashboard(),
     
   ];
 
@@ -314,10 +311,11 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
                   icon: Icon(Icons.video_library),
                   label: "Library",
                 ),
-                 BottomNavigationBarItem(
-                  icon: Icon(Icons.chat_bubble),
-                  label: "Chat",
-                ),
+                BottomNavigationBarItem(
+  icon: Icon(Icons.emoji_events_rounded),
+  label: "Badges",
+),
+
 
 
 

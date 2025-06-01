@@ -62,6 +62,7 @@ dependencies:
   cometchat: ^3.0.13
   agora_rtm: ^2.2.2
   firebase_storage: ^12.4.6
+  flutter_webrtc: ^0.14.1
   
   
 

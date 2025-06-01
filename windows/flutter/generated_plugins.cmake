@@ -12,6 +12,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   firebase_storage
+  flutter_webrtc
   iris_method_channel
   isar_flutter_libs
   media_kit_video

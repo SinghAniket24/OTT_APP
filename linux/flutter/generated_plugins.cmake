@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_drop
   emoji_picker_flutter
   file_selector_linux
+  flutter_webrtc
   isar_flutter_libs
   media_kit_video
   record_linux

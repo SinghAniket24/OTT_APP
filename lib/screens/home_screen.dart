@@ -75,68 +75,64 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchMovies() async {
-    final url = 'http://www.omdbapi.com/?s=batman&apikey=e23f75c3';
+  final url = 'http://localhost:5000/api/movies'; // use localhost for Flutter Web
+  try {
     final response = await http.get(Uri.parse(url));
-
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      if (data['Response'] == 'True') {
-        setState(() {
-          movies = (data['Search'] as List).map((movieData) {
-            return Movie(
-              title: movieData['Title'],
-              imageUrl: movieData['Poster'],
-              genre: 'Action',
-              description: 'N/A',
-              videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
-            );
-          }).toList();
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } else {
+      final List<dynamic> data = json.decode(response.body);
       setState(() {
+        movies = data.map((movieData) {
+          return Movie(
+            title: movieData['title'] ?? 'Untitled',
+            imageUrl: movieData['imageUrl'] ?? 'https://via.placeholder.com/150',
+            genre: movieData['genre'] ?? 'Unknown',
+            description: movieData['synopsis'] ?? 'No description',
+            videoUrl: movieData['videoUrl'] ?? '',
+          );
+        }).toList();
         isLoading = false;
       });
+    } else {
+      print("Error fetching movies: ${response.statusCode}");
+      setState(() => isLoading = false);
     }
+  } catch (e) {
+    print("Exception during fetchMovies: $e");
+    setState(() => isLoading = false);
   }
+}
+
 
   // Updated: Fetch series from OMDb API
   Future<void> fetchSeries() async {
-    final url = 'http://www.omdbapi.com/?s=pokemon&type=series&apikey=e23f75c3';
+  final url = 'http://localhost:5000/api/series';
+  try {
     final response = await http.get(Uri.parse(url));
-
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      if (data['Response'] == 'True') {
-        setState(() {
-          seriesList = (data['Search'] as List).map((seriesData) {
-            return Series(
-              title: seriesData['Title'] ?? '',
-              imageUrl: seriesData['Poster'] ?? '',
-              genre: 'N/A', // OMDb search API does not provide genre
-              description: 'N/A', // OMDb search API does not provide description
-              videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
-              seasons: 0, // Not available in search API
-              episodes: 0, // Not available in search API
-            );
-          }).toList();
-        });
-      } else {
-        setState(() {
-          seriesList = [];
-        });
-      }
-    } else {
+      final List<dynamic> data = json.decode(response.body);
       setState(() {
-        seriesList = [];
+        seriesList = data.map((seriesData) {
+          return Series(
+            title: seriesData['title'] ?? 'Untitled',
+            imageUrl: seriesData['imageUrl'] ?? 'https://via.placeholder.com/150',
+            genre: seriesData['genre'] ?? 'Unknown',
+            description: seriesData['synopsis'] ?? 'No description',
+            videoUrl: seriesData['videoUrl'] ?? '',
+            seasons: seriesData['seasons'] ?? 0,
+            episodes: seriesData['episodes'] ?? 0,
+          );
+        }).toList();
       });
+    } else {
+      print("Error fetching series: ${response.statusCode}");
+      setState(() => seriesList = []);
     }
+  } catch (e) {
+    print("Exception during fetchSeries: $e");
+    setState(() => seriesList = []);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

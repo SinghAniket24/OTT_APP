@@ -32,44 +32,62 @@ class _MovieVideoPlayerState extends State<MovieVideoPlayer> {
     _initializePlayer();
   }
 
-  Future<void> _initializePlayer() async {
-    try {
-      _videoPlayerController = VideoPlayerController.network(widget.videoUrl);
-      await _videoPlayerController.initialize();
+Future<void> _initializePlayer() async {
+  try {
+    // Detect format based on URL extension
+    VideoFormat formatHint = VideoFormat.other;
+    final url = widget.videoUrl.toLowerCase();
 
-      // Resume from last watched
-      final prefs = await SharedPreferences.getInstance();
-      final lastPosition = prefs.getInt(widget.videoUrl) ?? 0;
-      if (lastPosition > 0) {
-        _videoPlayerController.seekTo(Duration(seconds: lastPosition));
-      }
-
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController,
-        autoPlay: true,
-        looping: false,
-        showControls: _showControls,
-        allowFullScreen: true,
-        allowMuting: true,
-        allowPlaybackSpeedChanging: true,
-        placeholder: Container(color: Colors.black),
-      );
-
-      // Save progress every second
-      _videoPlayerController.addListener(() async {
-        final prefs = await SharedPreferences.getInstance();
-        final currentPosition = _videoPlayerController.value.position.inSeconds;
-        await prefs.setInt(widget.videoUrl, currentPosition);
-      });
-
-      setState(() => _isLoading = false);
-    } catch (e) {
-      setState(() {
-        _errorMsg = "Failed to load video: $e";
-        _isLoading = false;
-      });
+    if (url.endsWith(".m3u8")) {
+      formatHint = VideoFormat.hls;   // HLS streaming
+    } else if (url.endsWith(".mpd")) {
+      formatHint = VideoFormat.dash;  // DASH streaming
+    } else if (url.endsWith(".ism") || url.contains(".ism/")) {
+      formatHint = VideoFormat.ss;    // Smooth Streaming
+    } else {
+      formatHint = VideoFormat.other; // fallback to default
     }
+
+    _videoPlayerController = VideoPlayerController.network(
+      widget.videoUrl,
+      formatHint: formatHint,
+    );
+
+    await _videoPlayerController.initialize();
+
+    // Resume from last watched position
+    final prefs = await SharedPreferences.getInstance();
+    final lastPosition = prefs.getInt(widget.videoUrl) ?? 0;
+    if (lastPosition > 0) {
+      await _videoPlayerController.seekTo(Duration(seconds: lastPosition));
+    }
+
+    _chewieController = ChewieController(
+      videoPlayerController: _videoPlayerController,
+      autoPlay: true,
+      looping: false,
+      showControls: _showControls,
+      allowFullScreen: true,
+      allowMuting: true,
+      allowPlaybackSpeedChanging: true,
+      placeholder: Container(color: Colors.black),
+    );
+
+    // Save playback position periodically
+    _videoPlayerController.addListener(() async {
+      final prefs = await SharedPreferences.getInstance();
+      final currentPosition = _videoPlayerController.value.position.inSeconds;
+      await prefs.setInt(widget.videoUrl, currentPosition);
+    });
+
+    setState(() => _isLoading = false);
+  } catch (e) {
+    setState(() {
+      _errorMsg = "Failed to load video: $e";
+      _isLoading = false;
+    });
   }
+}
 
   Future<void> _downloadVideo() async {
     try {
