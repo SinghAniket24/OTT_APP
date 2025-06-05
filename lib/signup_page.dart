@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'main.dart'; 
+import 'package:http/http.dart' as http; // <-- Add this
+import 'dart:convert'; // <-- Add this
+import 'main.dart';
 import 'login_screen.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -84,12 +86,28 @@ class _SignUpPageState extends State<SignUpPage> {
         "phone": phone,
       });
 
-      _showSnackBar("Sign up successful!");
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+      // --- Add MongoDB signup call here ---
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/api/user'), // <-- Replace with your backend URL
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          "uid": userCred.user!.uid,
+          "email": email,
+          "password": password, // Consider hashing on backend
+          "aadhar": aadhar,
+          "phone": phone,
+        }),
       );
+
+      if (response.statusCode == 200) {
+        _showSnackBar("Sign up successful!");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
+        );
+      } else {
+        _showSnackBar("MongoDB Error: ${response.body}");
+      }
     } catch (e) {
       _showSnackBar("Error: ${e.toString()}");
     }
