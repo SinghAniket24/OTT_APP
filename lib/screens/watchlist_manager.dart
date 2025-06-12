@@ -29,20 +29,13 @@ class WatchlistManager {
           )));
     }
     // Load series
-    final seriesData = prefs.getString('series_watchlist');
-    if (seriesData != null) {
-      List decoded = jsonDecode(seriesData);
-      _seriesWatchlist.clear();
-      _seriesWatchlist.addAll(decoded.map((e) => Series(
-            title: e['title'],
-            imageUrl: e['imageUrl'],
-            genre: e['genre'],
-            description: e['description'],
-            videoUrl: e['videoUrl'],
-            seasons: e['seasons'],
-            episodes: e['episodes'],
-          )));
-    }
+   final seriesData = prefs.getString('series_watchlist');
+if (seriesData != null) {
+  List decoded = jsonDecode(seriesData);
+  _seriesWatchlist.clear();
+  _seriesWatchlist.addAll(decoded.map((e) => Series.fromJson(e)));
+}
+
   }
 
   Future<void> saveMovieWatchlist() async {

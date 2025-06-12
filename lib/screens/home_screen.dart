@@ -32,6 +32,10 @@ class Series {
   final String videoUrl;
   final int seasons;
   final int episodes;
+  final String? director;
+  final double? rating;
+  final List<Cast>? cast;
+  final List<SeasonDetail> seasonDetails;
 
   Series({
     required this.title,
@@ -41,8 +45,110 @@ class Series {
     required this.videoUrl,
     required this.seasons,
     required this.episodes,
+    this.director,
+    this.rating,
+    this.cast,
+    required this.seasonDetails,
   });
+
+  factory Series.fromJson(Map<String, dynamic> json) {
+    return Series(
+      title: json['title'],
+      imageUrl: json['imageUrl'],
+      genre: json['genre'],
+      description: json['description'],
+      videoUrl: json['videoUrl'],
+      seasons: json['seasons'],
+      episodes: json['episodes'],
+      director: json['director'],
+      rating: (json['rating'] != null) ? json['rating'].toDouble() : null,
+      cast: (json['cast'] != null)
+          ? (json['cast'] as List).map((c) => Cast.fromJson(c)).toList()
+          : null,
+      seasonDetails: (json['seasonDetails'] as List)
+          .map((season) => SeasonDetail.fromJson(season))
+          .toList(),
+    );
+  }
 }
+
+class Cast {
+  final String name;
+  final String role;
+  final String image;
+
+  Cast({
+    required this.name,
+    required this.role,
+    required this.image,
+  });
+
+  factory Cast.fromJson(Map<String, dynamic> json) {
+    return Cast(
+      name: json['name'],
+      role: json['role'],
+      image: json['image'],
+    );
+  }
+}
+
+class SeasonDetail {
+  final int seasonNumber;
+  final String title;
+  final String thumbnail;
+  final String description;
+  final String videoUrl;
+  final List<Episode> episodes;
+
+  SeasonDetail({
+    required this.seasonNumber,
+    required this.title,
+    required this.thumbnail,
+    required this.description,
+    required this.videoUrl,
+    required this.episodes,
+  });
+
+  factory SeasonDetail.fromJson(Map<String, dynamic> json) {
+    return SeasonDetail(
+      seasonNumber: json['seasonNumber'],
+      title: json['title'],
+      thumbnail: json['thumbnail'],
+      description: json['description'],
+      videoUrl: json['videoUrl'],
+      episodes: (json['episodes'] as List)
+          .map((e) => Episode.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class Episode {
+  final int episodeNumber;
+  final String title;
+  final String thumbnail;
+  final String description;
+  final String videoUrl;
+
+  Episode({
+    required this.episodeNumber,
+    required this.title,
+    required this.thumbnail,
+    required this.description,
+    required this.videoUrl,
+  });
+
+  factory Episode.fromJson(Map<String, dynamic> json) {
+    return Episode(
+      episodeNumber: json['episodeNumber'],
+      title: json['title'],
+      thumbnail: json['thumbnail'],
+      description: json['description'],
+      videoUrl: json['videoUrl'],
+    );
+  }
+}
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -86,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: movieData['title'] ?? 'Untitled',
             imageUrl: movieData['imageUrl'] ?? 'https://via.placeholder.com/150',
             genre: movieData['genre'] ?? 'Unknown',
-            description: movieData['synopsis'] ?? 'No description',
+            description: movieData['description'] ?? 'No description',
             videoUrl: movieData['videoUrl'] ?? '',
           );
         }).toList();
@@ -104,24 +210,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   // Updated: Fetch series from OMDb API
-  Future<void> fetchSeries() async {
+ Future<void> fetchSeries() async {
   final url = 'http://localhost:5000/api/series';
   try {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       setState(() {
-        seriesList = data.map((seriesData) {
-          return Series(
-            title: seriesData['title'] ?? 'Untitled',
-            imageUrl: seriesData['imageUrl'] ?? 'https://via.placeholder.com/150',
-            genre: seriesData['genre'] ?? 'Unknown',
-            description: seriesData['synopsis'] ?? 'No description',
-            videoUrl: seriesData['videoUrl'] ?? '',
-            seasons: seriesData['seasons'] ?? 0,
-            episodes: seriesData['episodes'] ?? 0,
-          );
-        }).toList();
+        seriesList = data.map((seriesData) => Series.fromJson(seriesData)).toList();
       });
     } else {
       print("Error fetching series: ${response.statusCode}");

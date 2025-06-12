@@ -4,9 +4,10 @@ import 'cast_screen.dart';
 import 'library_page.dart';
 import 'watchlist_manager.dart';
 import 'dart:ui';
+import 'home_screen.dart'; // Make sure Movie class is imported
 
 class MovieDetailPage extends StatefulWidget {
-  final movie;
+  final Movie movie; // Use the Movie type
 
   const MovieDetailPage({super.key, required this.movie});
 
@@ -22,13 +23,15 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
   late Animation<double> _fadeAnimation;
 
   double _getRating() {
+    // If your movie object has a rating, use it here instead
     return (5 * (1 + (DateTime.now().millisecondsSinceEpoch % 100) / 100)).toDouble();
   }
 
+  // Replace with real director/cast if available in your Movie model
   final String directorName = "Christopher Nolan";
   final List<String> castList = ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page", "Tom Hardy"];
 
-  // --- Reference UI Colors ---
+  // UI Colors
   final Color bgDark = const Color(0xFF181F2B);
   final Color cardDark = const Color(0xFF232B3E);
   final Color accentTeal = const Color(0xFF00B4D8);
@@ -59,7 +62,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     double rating = _getRating();
-
     final isInWatchlist = WatchlistManager().isInWatchlist(widget.movie);
 
     return Scaffold(
@@ -67,7 +69,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
       appBar: AppBar(
         backgroundColor: cardDark,
         title: Text(
-          widget.movie.title,
+          widget.movie.title, // Movie title
           style: TextStyle(
             color: accentTeal,
             fontWeight: FontWeight.bold,
@@ -98,8 +100,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
             children: [
               if (_isVideoPlaying)
                 MovieVideoPlayer(
-                  videoUrl: " https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4",
-                  // https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4
+                  videoUrl: widget.movie.videoUrl, // Use the movie's video URL
                 ),
               if (!_isVideoPlaying)
                 Padding(
@@ -116,76 +117,51 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
                           ),
                         ],
                       ),
-                      // child: Image.network(
-                      //   widget.movie.imageUrl,
-                      //   width: double.infinity,
-                      //   height: 260,
-                      //  fit: BoxFit.contain,
-                      //   errorBuilder: (context, error, stackTrace) => Container(
-                      //     width: double.infinity,
-                      //     height: 260,
-                      //     color: cardDark,
-                      //     child: const Center(
-                      //       child: Icon(Icons.broken_image, color: Colors.white38, size: 60),
-                      //     ),
-                      //   ),
-                      //   loadingBuilder: (context, child, progress) {
-                      //     if (progress == null) return child;
-                      //     return Container(
-                      //       width: double.infinity,
-                      //       height: 260,
-                      //       color: cardDark,
-                      //       child: const Center(child: CircularProgressIndicator()),
-                      //     );
-                      //   },
-                      // ),
-                     child: Stack(
-  children: [
-    // Blurred, darkened background image
-    Positioned.fill(
-      child: Image.network(
-        widget.movie.imageUrl,
-        fit: BoxFit.cover,
-        color: Colors.black.withOpacity(0.4),
-        colorBlendMode: BlendMode.darken,
-      ),
-    ),
-    Positioned.fill(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(color: Colors.transparent),
-      ),
-    ),
-    // Foreground image (always fully visible)
-    Center(
-      child: Image.network(
-        widget.movie.imageUrl,
-        width: double.infinity,
-        height: 260,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Container(
-          width: double.infinity,
-          height: 260,
-          color: cardDark,
-          child: const Center(
-            child: Icon(Icons.broken_image, color: Colors.white38, size: 60),
-          ),
-        ),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return Container(
-            width: double.infinity,
-            height: 260,
-            color: cardDark,
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        },
-      ),
-    ),
-  ],
-),
-
-
+                      child: Stack(
+                        children: [
+                          // Blurred, darkened background image
+                          Positioned.fill(
+                            child: Image.network(
+                              widget.movie.imageUrl, // Movie image
+                              fit: BoxFit.cover,
+                              color: Colors.black.withOpacity(0.4),
+                              colorBlendMode: BlendMode.darken,
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                          // Foreground image (always fully visible)
+                          Center(
+                            child: Image.network(
+                              widget.movie.imageUrl, // Movie image
+                              width: double.infinity,
+                              height: 260,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: double.infinity,
+                                height: 260,
+                                color: cardDark,
+                                child: const Center(
+                                  child: Icon(Icons.broken_image, color: Colors.white38, size: 60),
+                                ),
+                              ),
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Container(
+                                  width: double.infinity,
+                                  height: 260,
+                                  color: cardDark,
+                                  child: const Center(child: CircularProgressIndicator()),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -193,7 +169,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 22),
                 child: Text(
-                  widget.movie.title,
+                  widget.movie.title, // Movie title
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -211,7 +187,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
                     Chip(
                       backgroundColor: chipBg,
                       label: Text(
-                        widget.movie.genre,
+                        widget.movie.genre, // Movie genre
                         style: TextStyle(color: accentTeal, fontWeight: FontWeight.w600),
                       ),
                       side: BorderSide(color: accentTeal, width: 1),
@@ -360,6 +336,29 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
               const SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Text(
+                  "About the Movie",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: accentTeal,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Text(
+                  widget.movie.description, // Movie description
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
                 child: Row(
                   children: [
                     Icon(Icons.movie_creation_outlined, color: accentTeal, size: 22),
@@ -402,27 +401,14 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
                         child: Chip(
                           backgroundColor: chipBg,
                           side: BorderSide(color: accentTeal, width: 1),
-                          label: Text(cast, style: TextStyle(color: textPrimary)),
+                          label: Text(
+                            cast,
+                            style: TextStyle(color: accentTeal),
+                          ),
                         ),
                       );
                     }).toList(),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22),
-                child: Text(
-                  'About the Movie',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: accentTeal),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22),
-                child: Text(
-                  widget.movie.description,
-                  style: TextStyle(fontSize: 16, height: 1.6, color: textSecondary),
                 ),
               ),
               const SizedBox(height: 30),
@@ -433,4 +419,3 @@ class _MovieDetailPageState extends State<MovieDetailPage> with SingleTickerProv
     );
   }
 }
-

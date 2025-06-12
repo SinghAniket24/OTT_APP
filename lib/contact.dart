@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // For JSON encoding
-import 'package:http_parser/http_parser.dart'; // For MediaType
+// import 'package:http_parser/http_parser.dart'; // For MediaType
 
 class ContactPage extends StatefulWidget {
   @override
