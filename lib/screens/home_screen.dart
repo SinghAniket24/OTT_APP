@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'movie_detail_page.dart';
-import 'series_detail_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import 'movie_detail_page.dart';
+import 'series_detail_page.dart';
 import 'searchresuts.dart';
 import 'genre_movie_screen.dart';
 
@@ -13,6 +16,10 @@ class Movie {
   final String genre;
   final String description;
   final String videoUrl;
+  final String? movieUrl;
+  final String? director;
+  final double? rating;
+  final List<MovieCast>? cast;
 
   Movie({
     required this.title,
@@ -20,7 +27,51 @@ class Movie {
     required this.genre,
     required this.description,
     required this.videoUrl,
+    this.movieUrl,
+    this.director,
+    this.rating,
+    this.cast,
   });
+
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      title: json['title'],
+      imageUrl: json['imageUrl'],
+      genre: json['genre'],
+      description: json['description'],
+      videoUrl: json['videoUrl'],
+      movieUrl: json['movieUrl'],
+      director: json['director'],
+      rating: (json['rating'] != null)
+          ? double.tryParse(json['rating'].toString())
+          : null,
+      cast: (json['cast'] != null)
+          ? (json['cast'] as List)
+              .map((c) => MovieCast.fromJson(c))
+              .toList()
+          : null,
+    );
+  }
+}
+
+class MovieCast {
+  final String name;
+  final String role;
+  final String image;
+
+  MovieCast({
+    required this.name,
+    required this.role,
+    required this.image,
+  });
+
+  factory MovieCast.fromJson(Map<String, dynamic> json) {
+    return MovieCast(
+      name: json['name'],
+      role: json['role'],
+      image: json['image'],
+    );
+  }
 }
 
 // Series class (separate from Movie)
@@ -149,7 +200,6 @@ class Episode {
   }
 }
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -159,6 +209,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Movie> movies = [];
+  List<Movie> recommendedMovies = [];
   List<Series> seriesList = [];
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
@@ -181,52 +232,118 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchMovies() async {
-  final url = 'http://localhost:5000/api/movies'; // use localhost for Flutter Web
-  try {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      setState(() {
-        movies = data.map((movieData) {
-          return Movie(
-            title: movieData['title'] ?? 'Untitled',
-            imageUrl: movieData['imageUrl'] ?? 'https://via.placeholder.com/150',
-            genre: movieData['genre'] ?? 'Unknown',
-            description: movieData['description'] ?? 'No description',
-            videoUrl: movieData['videoUrl'] ?? '',
-          );
-        }).toList();
-        isLoading = false;
-      });
-    } else {
-      print("Error fetching movies: ${response.statusCode}");
+    final url = 'http://localhost:5000/api/movies'; // Use correct API URL
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          movies = data.map((movieData) {
+            return Movie(
+              title: movieData['title'] ?? 'Untitled',
+              imageUrl: movieData['imageUrl'] ?? 'https://via.placeholder.com/150',
+              genre: movieData['genre'] ?? 'Unknown',
+              description: movieData['description'] ?? 'No description',
+              videoUrl: movieData['videoUrl'] ?? '',
+              movieUrl: movieData['movieUrl'] ?? '',
+              director: movieData['director'],
+              rating: movieData['rating'] != null
+                  ? double.tryParse(movieData['rating'].toString())
+                  : null,
+              cast: movieData['cast'] != null
+                  ? (movieData['cast'] as List)
+                      .map((c) => MovieCast.fromJson(c))
+                      .toList()
+                  : null,
+            );
+          }).toList();
+          loadRecommendedMovies();
+          isLoading = false;
+        });
+      } else {
+        print("Error fetching movies: ${response.statusCode}");
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("Exception during fetchMovies: $e");
       setState(() => isLoading = false);
     }
-  } catch (e) {
-    print("Exception during fetchMovies: $e");
-    setState(() => isLoading = false);
   }
-}
 
-
-  // Updated: Fetch series from OMDb API
- Future<void> fetchSeries() async {
-  final url = 'http://localhost:5000/api/series';
-  try {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      setState(() {
-        seriesList = data.map((seriesData) => Series.fromJson(seriesData)).toList();
-      });
-    } else {
-      print("Error fetching series: ${response.statusCode}");
+  Future<void> fetchSeries() async {
+    final url = 'http://localhost:5000/api/series';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          seriesList = data.map((seriesData) => Series.fromJson(seriesData)).toList();
+        });
+      } else {
+        print("Error fetching series: ${response.statusCode}");
+        setState(() => seriesList = []);
+      }
+    } catch (e) {
+      print("Exception during fetchSeries: $e");
       setState(() => seriesList = []);
     }
-  } catch (e) {
-    print("Exception during fetchSeries: $e");
-    setState(() => seriesList = []);
   }
+
+
+// Track genre when user watches a movie
+Future<void> trackGenre(String genre) async {
+  final prefs = await SharedPreferences.getInstance();
+  int currentCount = prefs.getInt(genre) ?? 0;
+  await prefs.setInt(genre, currentCount + 1);
+  await loadRecommendedMovies(); // Update recommendations after tracking
+}
+
+// Get top genres from watch history
+Future<List<String>> getTopGenres({int limit = 2}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final Map<String, int> genreCounts = {};
+  // List all possible genres in your app
+  final List<String> genres = [
+    'Action',
+    'Drama',
+    'Horror',
+    'Comedy',
+    'Thriller',
+    'Sci-Fi',
+    'Adventure',
+  ];
+  for (final genre in genres) {
+    final count = prefs.getInt(genre) ?? 0;
+    genreCounts[genre] = count;
+  }
+  final sortedEntries = genreCounts.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  // Only return genres with at least 1 watch
+  return sortedEntries
+      .where((e) => e.value > 0)
+      .take(limit)
+      .map((e) => e.key)
+      .toList();
+}
+
+// Filter movies by top genres, or show all if no history
+Future<void> loadRecommendedMovies() async {
+  if (movies.isEmpty) return;
+  final topGenres = await getTopGenres();
+  setState(() {
+    if (topGenres.isEmpty) {
+      // No history: show all movies
+      recommendedMovies = List<Movie>.from(movies);
+    } else {
+      // Show movies matching top genres
+      recommendedMovies =
+          movies.where((movie) => topGenres.contains(movie.genre)).toList();
+      // If no movies match top genres, fallback to all movies
+      if (recommendedMovies.isEmpty) {
+        recommendedMovies = List<Movie>.from(movies);
+      }
+    }
+  });
 }
 
 
@@ -250,10 +367,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildGenreList(),
                   const SizedBox(height: 22),
                   _buildSlider("Trending", movies, context),
-                  _buildSlider("Recommended", movies, context),
+                  _buildSlider("Recommended", recommendedMovies, context),
                   _buildSlider("Recently Added", movies, context),
                   const SizedBox(height: 18),
-                  _buildSeriesSection(), // <---- Series Section Added Here
+                  _buildSeriesSection(),
                   const SizedBox(height: 18),
                 ],
               ),
@@ -277,7 +394,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SearchResultsPage(searchQuery: query),
+                  builder: (context) => SearchResultsPage(
+                    searchQuery: query,
+                    movies: movies,
+                  ),
                 ),
               );
             }
@@ -346,17 +466,18 @@ class _HomeScreenState extends State<HomeScreen> {
         controller: PageController(viewportFraction: 0.78),
         itemBuilder: (context, index) {
           final movie = movies[index];
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
-                );
-              },
+          return GestureDetector(
+            onTap: () {
+              trackGenre(movie.genre);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
+              );
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              margin: const EdgeInsets.symmetric(horizontal: 10),
               child: Stack(
                 children: [
                   Container(
@@ -388,7 +509,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             return progress == null
                                 ? child
                                 : Center(
-                                    child: CircularProgressIndicator(color: emerald));
+                                    child: CircularProgressIndicator(color: emerald),
+                                  );
                           },
                         ),
                       ),
@@ -400,7 +522,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     right: 0,
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(22)),
+                        borderRadius:
+                            const BorderRadius.vertical(bottom: Radius.circular(22)),
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -440,12 +563,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGenreList() {
     final genres = [
-      {'img': 'https://picsum.photos/200/200?random=101', 'label': 'Action'},
-      {'img': 'https://picsum.photos/200/200?random=102', 'label': 'Drama'},
-      {'img': 'https://picsum.photos/200/200?random=103', 'label': 'Horror'},
-      {'img': 'https://picsum.photos/200/200?random=104', 'label': 'Comedy'},
-      {'img': 'https://picsum.photos/200/200?random=105', 'label': 'Thriller'},
+      {
+        'icon': FontAwesomeIcons.bolt,
+        'label': 'Action',
+        'bgColor': Colors.redAccent,
+        'iconColor': Colors.white,
+      },
+      {
+        'icon': FontAwesomeIcons.theaterMasks,
+        'label': 'Drama',
+        'bgColor': Colors.deepPurpleAccent,
+        'iconColor': Colors.white,
+      },
+      {
+        'icon': FontAwesomeIcons.ghost,
+        'label': 'Horror',
+        'bgColor': Colors.black87,
+        'iconColor': Colors.deepOrangeAccent,
+      },
+      {
+        'icon': FontAwesomeIcons.laughBeam,
+        'label': 'Comedy',
+        'bgColor': Colors.yellow.shade700,
+        'iconColor': Colors.black87,
+      },
+      {
+        'icon': FontAwesomeIcons.userNinja,
+        'label': 'Thriller',
+        'bgColor': Colors.teal,
+        'iconColor': Colors.white,
+      },
+      {
+        'icon': FontAwesomeIcons.robot,
+        'label': 'Sci-Fi',
+        'bgColor': Colors.indigo,
+        'iconColor': Colors.cyanAccent,
+      },
+      {
+        'icon': FontAwesomeIcons.mountainSun,
+        'label': 'Adventures',
+        'bgColor': Colors.green,
+        'iconColor': Colors.white,
+      },
     ];
+
     return SizedBox(
       height: 92,
       child: ListView.builder(
@@ -453,13 +614,25 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         itemCount: genres.length,
         itemBuilder: (context, index) {
-          return _buildGenreItem(genres[index]['img']!, genres[index]['label']!);
+          return _buildGenreItem(
+            genres[index]['icon'] as IconData,
+            genres[index]['label'] as String,
+            genres[index]['bgColor'] as Color,
+            genres[index]['iconColor'] as Color,
+            context,
+          );
         },
       ),
     );
   }
 
-  Widget _buildGenreItem(String imageUrl, String label) {
+  Widget _buildGenreItem(
+    IconData icon,
+    String label,
+    Color bgColor,
+    Color iconColor,
+    BuildContext context,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -481,33 +654,29 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 62,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [emerald, tealAccent, cardDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: bgColor,
                 boxShadow: [
                   BoxShadow(
-                    color: mint.withOpacity(0.22),
+                    color: bgColor.withOpacity(0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: ClipOval(
-                child: Image.network(imageUrl, fit: BoxFit.cover),
+              child: Center(
+                child: FaIcon(icon, color: iconColor, size: 26),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
-                color: mint,
+                color: Colors.white,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 shadows: [
                   Shadow(
-                    color: emerald.withOpacity(0.18),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 2,
                   ),
                 ],
@@ -550,6 +719,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final item = items[index];
               return GestureDetector(
                 onTap: () {
+                  trackGenre(item.genre);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => MovieDetailPage(movie: item)),
@@ -602,7 +772,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // The series section builder (unchanged, just for completeness)
   Widget _buildSeriesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
