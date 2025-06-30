@@ -92,6 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFF191A1E),

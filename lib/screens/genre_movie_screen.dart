@@ -16,8 +16,8 @@ class GenreMovieListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final darkBackground = const Color.fromARGB(255, 36, 41, 39);
     final tealAccent = const Color(0xFF116466);
-    final sandColor = const Color(0xFFD9B08C);
-    final lightSand = const Color(0xFFFFCB9A);
+    // final sandColor = const Color(0xFFD9B08C);
+    // final lightSand = const Color(0xFFFFCB9A);
     final paleGreen = const Color(0xFFD1E8E2);
 
     final filteredMovies =

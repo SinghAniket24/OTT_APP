@@ -19,7 +19,7 @@ class SeriesDetailPage extends StatefulWidget {
 class _SeriesDetailPageState extends State<SeriesDetailPage> with SingleTickerProviderStateMixin {
   bool _isVideoPlaying = false;
   String? _currentVideoUrl;
-  bool _isLiked = false;
+  
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'dart:ui' as ui; // For web
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html; // For web
 import 'package:webview_flutter/webview_flutter.dart'; // For mobile
 

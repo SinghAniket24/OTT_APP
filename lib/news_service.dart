@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class NewsService {
-  final String _apiKey = 'pub_829027844f06266341c58f73c4dc2197f4d27'; // Replace with your actual API key
+  final String _apiKey = 'pub_829027844f06266341c58f73c4dc2197f4d27'; 
   final String _baseUrl = 'https://newsdata.io/api/1/news';
 
   // List of keywords related to movies, OTT, and TV shows

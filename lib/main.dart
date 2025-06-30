@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'dart:math';
+// import 'package:webview_flutter/webview_flutter.dart';
+// import 'package:webview_flutter_android/webview_flutter_android.dart';
+// import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
 
@@ -16,8 +16,10 @@ import 'dart:ui';
 import 'screens/settings.dart';
 import 'contact.dart';
 import 'chatbot_page.dart';
-import 'screens/chat_page.dart' ;
+// import 'screens/chat_page.dart' ;
 import 'screens/badges_dashboard.dart';
+import 'screens/watchparty.dart';
+
 
 // import 'screens/games_page.dart'; 
 
@@ -109,6 +111,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
     const NewsScreen(),
     LibraryPage(),
     BadgeDashboard(),
+    WatchParty(),
     
   ];
 
@@ -315,6 +318,10 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   icon: Icon(Icons.emoji_events_rounded),
   label: "Badges",
 ),
+BottomNavigationBarItem(
+    icon: Icon(Icons.group),
+    label: "WatchParty",
+  ),
 
 
 
