@@ -14,7 +14,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_storage
   flutter_webrtc
   iris_method_channel
-  isar_flutter_libs
   media_kit_video
   permission_handler_windows
   record_windows

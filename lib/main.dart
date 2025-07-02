@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-// import 'package:webview_flutter/webview_flutter.dart';
-// import 'package:webview_flutter_android/webview_flutter_android.dart';
-// import 'dart:math';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
+
+
+
 
 // Import your screens here
 import 'screens/news_screen.dart';
@@ -26,11 +30,13 @@ import 'screens/watchparty.dart';
 
 
 
-void main() async {
-  SendbirdChat.init(appId: '5D630797-111E-4F37-B734-8279516F46AB');
-
-
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+
+
+
+  // ✅ Initialize Firebase
   await Firebase.initializeApp(
     options: const FirebaseOptions(
       apiKey: "AIzaSyDa6dT-xfaCdnMPPMbTd4yI80v6JqRewU4",
@@ -46,13 +52,15 @@ void main() async {
   runApp(const OTTApp());
 }
 
+
+
 class OTTApp extends StatelessWidget {
   const OTTApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Marathi Play',
+      title: 'Buzzing Bea',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Montserrat',

@@ -19,7 +19,6 @@ import firebase_storage
 import flutter_webrtc
 import google_sign_in_ios
 import iris_method_channel
-import isar_flutter_libs
 import just_audio
 import media_kit_video
 import package_info_plus
@@ -51,7 +50,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterWebRTCPlugin.register(with: registry.registrar(forPlugin: "FlutterWebRTCPlugin"))
   FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))
   IrisMethodChannelPlugin.register(with: registry.registrar(forPlugin: "IrisMethodChannelPlugin"))
-  IsarFlutterLibsPlugin.register(with: registry.registrar(forPlugin: "IsarFlutterLibsPlugin"))
   JustAudioPlugin.register(with: registry.registrar(forPlugin: "JustAudioPlugin"))
   MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))
