@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http; // <-- Add this
 import 'dart:convert'; // <-- Add this
 import 'main.dart';
 import 'login_screen.dart';
+import 'CompleteProfileForm.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -99,15 +100,19 @@ class _SignUpPageState extends State<SignUpPage> {
         }),
       );
 
-      if (response.statusCode == 200) {
-        _showSnackBar("Sign up successful!");
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainPage()),
-        );
-      } else {
-        _showSnackBar("MongoDB Error: ${response.body}");
-      }
+if (response.statusCode == 200 || response.statusCode == 201) {
+  final data = json.decode(response.body);
+  _showSnackBar(data['message'] ?? "Sign up successful!");
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => const CompleteProfileForm()),
+  );
+} else {
+  final error = json.decode(response.body);
+  _showSnackBar("MongoDB Error: ${error['error'] ?? 'Something went wrong'}");
+}
+
     } catch (e) {
       _showSnackBar("Error: ${e.toString()}");
     }
@@ -145,7 +150,8 @@ class _SignUpPageState extends State<SignUpPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+       MaterialPageRoute(builder: (context) => const CompleteProfileForm())
+
       );
     } catch (e) {
       _showSnackBar("Google Sign-In Error: ${e.toString()}");
@@ -315,4 +321,13 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+   @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    aadharController.dispose();
+    phoneController.dispose();
+    super.dispose(); // Always call super.dispose() last
+}
 }

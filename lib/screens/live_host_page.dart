@@ -130,37 +130,37 @@ class _LiveHostPageState extends State<LiveHostPage> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildStatusBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      color: Colors.grey.shade900,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Row(children: [
-              const Icon(Icons.circle, color: Colors.red, size: 14),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  "Live: ${widget.roomId}",
-                  style: const TextStyle(color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )
-            ]),
-          ),
-          Row(
-            children: [
-              Icon(_isCameraOn ? Icons.videocam : Icons.videocam_off, color: Colors.white),
-              const SizedBox(width: 10),
-              Icon(_isMicOn ? Icons.mic : Icons.mic_off, color: Colors.white),
-            ],
-          )
-        ],
-      ),
-    );
-  }
+  // Widget _buildStatusBar() {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //     color: Colors.grey.shade900,
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Expanded(
+  //           child: Row(children: [
+  //             const Icon(Icons.circle, color: Colors.red, size: 14),
+  //             const SizedBox(width: 6),
+  //             Expanded(
+  //               child: Text(
+  //                 "Live: ${widget.roomId}",
+  //                 style: const TextStyle(color: Colors.white),
+  //                 overflow: TextOverflow.ellipsis,
+  //               ),
+  //             )
+  //           ]),
+  //         ),
+  //         Row(
+  //           children: [
+  //             Icon(_isCameraOn ? Icons.videocam : Icons.videocam_off, color: Colors.white),
+  //             const SizedBox(width: 10),
+  //             Icon(_isMicOn ? Icons.mic : Icons.mic_off, color: Colors.white),
+  //           ],
+  //         )
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildControls() {
     return SingleChildScrollView(
@@ -227,24 +227,42 @@ class _LiveHostPageState extends State<LiveHostPage> with WidgetsBindingObserver
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildStatusBar(),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: _buildCameraPreview(),
-              ),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(
+      backgroundColor: Colors.grey.shade900,
+      title: Text("🔴 Live: ${widget.roomId}"),
+     leading: IconButton(
+  icon: const Icon(Icons.arrow_back),
+  onPressed: () {
+    Navigator.pop(context);
+    Navigator.pop(context);
+  },
+),
+// 👈 This shows the back button
+      actions: [
+        Icon(_isCameraOn ? Icons.videocam : Icons.videocam_off, color: Colors.white),
+        const SizedBox(width: 10),
+        Icon(_isMicOn ? Icons.mic : Icons.mic_off, color: Colors.white),
+        const SizedBox(width: 12),
+      ],
+    ),
+    body: SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: _buildCameraPreview(),
             ),
-            _buildControls(),
-          ],
-        ),
+          ),
+          _buildControls(),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
+
+  }

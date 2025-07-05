@@ -5,6 +5,11 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = 'C:/ffmpeg-7.1.1-full_build/bin/ffmpeg.exe';
+ffmpeg.setFfmpegPath(ffmpegPath);
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +23,10 @@ const io = new Server(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Create directory to store converted videos
+const outputDir = path.join(__dirname, 'converted');
+if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
 
 // DB Connections
 const movieDB = mongoose.createConnection(process.env.MONGO_URI_MOVIEDB, {
@@ -53,7 +62,6 @@ const userSchema = new mongoose.Schema({
 });
 const User = userDB.model('User', userSchema);
 
-// Chat and Stream Schemas
 const messageSchema = new mongoose.Schema({
   roomId: { type: String, required: true },
   from: { type: String, required: true },
@@ -75,14 +83,11 @@ const liveStreamSchema = new mongoose.Schema({
 const Message = userDB.model('Message', messageSchema);
 const LiveStream = userDB.model('LiveStream', liveStreamSchema);
 
-// In-memory viewer tracking
 const streamViewers = new Map();
 
-// Socket.IO logic
 io.on("connection", (socket) => {
   console.log("🔌 Socket connected:", socket.id);
 
-  // --- Chat ---
   socket.on("joinRoom", async ({ roomId, email }, callback) => {
     try {
       socket.join(roomId);
@@ -112,7 +117,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // --- Live Stream ---
   socket.on("startStream", async ({ email, title }, callback) => {
     try {
       const roomId = uuidv4();
@@ -128,7 +132,6 @@ io.on("connection", (socket) => {
 
       await newStream.save();
       streamViewers.set(roomId, new Set());
-
       io.emit("newLiveStarted", newStream);
       callback?.({ status: "success", stream: newStream });
     } catch (err) {
@@ -138,11 +141,7 @@ io.on("connection", (socket) => {
 
   socket.on("endStream", async ({ roomId }, callback) => {
     try {
-      await LiveStream.findOneAndUpdate(
-        { roomId },
-        { $set: { endedAt: new Date() } }
-      );
-
+      await LiveStream.findOneAndUpdate({ roomId }, { $set: { endedAt: new Date() } });
       streamViewers.delete(roomId);
       io.emit("liveEnded", { roomId });
       callback?.({ status: "success" });
@@ -154,15 +153,12 @@ io.on("connection", (socket) => {
   socket.on("joinStream", ({ roomId, email }, callback) => {
     try {
       socket.join(roomId);
-
       if (!streamViewers.has(roomId)) {
         streamViewers.set(roomId, new Set());
       }
       streamViewers.get(roomId).add(socket.id);
-
       const viewers = streamViewers.get(roomId).size;
       io.emit("viewerUpdate", { roomId, viewers });
-
       callback?.({ status: "success", viewers });
     } catch (err) {
       callback?.({ status: "error", error: err.message });
@@ -190,36 +186,19 @@ io.on("connection", (socket) => {
 });
 
 // --- API Routes ---
-// Movies, series, users, submissions (your original routes remain untouched)
 
 app.post('/api/submit', async (req, res) => {
   try {
     const {
-      companyName,
-      contactPerson,
-      email,
-      phone,
-      website,
-      title,
-      genre,
-      duration,
-      synopsis,
-      trailer,
+      companyName, contactPerson, email, phone, website,
+      title, genre, duration, synopsis, trailer,
     } = req.body;
 
     const sampleVideoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
 
     const submission = new Submission({
-      companyName,
-      contactPerson,
-      email,
-      phone,
-      website,
-      title,
-      genre,
-      duration,
-      synopsis,
-      trailer,
+      companyName, contactPerson, email, phone, website,
+      title, genre, duration, synopsis, trailer,
       videoUrl: sampleVideoUrl,
     });
 
@@ -251,7 +230,6 @@ app.get('/api/series', async (req, res) => {
 app.post('/api/user', async (req, res) => {
   try {
     const { uid, email, password, aadhar, phone } = req.body;
-
     if (!uid || !email || !password || !aadhar || !phone) {
       return res.status(400).json({ error: 'All fields are required' });
     }
@@ -279,14 +257,10 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
-// Live stream list APIs
 app.get("/live-streams", async (req, res) => {
   try {
     const streams = await LiveStream.find({ endedAt: { $exists: false } });
-    const data = streams.map((s) => ({
-      ...s.toObject(),
-      viewers: streamViewers.get(s.roomId)?.size || 0
-    }));
+    const data = streams.map((s) => ({ ...s.toObject(), viewers: streamViewers.get(s.roomId)?.size || 0 }));
     res.json({ status: "success", data });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -302,12 +276,85 @@ app.get("/past-streams", async (req, res) => {
   }
 });
 
-// Root test
+app.get('/convert', async (req, res) => {
+  const videoUrl = req.query.url;
+  if (!videoUrl) {
+    return res.status(400).send('❌ Video URL is required');
+  }
+
+  // ✅ If it's already .mp4, assume it's compatible and return as-is
+  if (videoUrl.endsWith('.mp4')) {
+    console.log(`⚠️ Skipping conversion: already .mp4`);
+    return res.redirect(videoUrl); // 👈 Just redirect the client
+  }
+
+  const timestamp = Date.now();
+  const outputFile = path.join(outputDir, `converted_${timestamp}.mp4`);
+
+  const command = ffmpeg(videoUrl)
+    .outputOptions([
+      '-vcodec', 'libx264',
+      '-acodec', 'aac',
+      '-pix_fmt', 'yuv420p'
+    ])
+    .on('start', () => {
+      console.log(`🔄 Starting conversion for: ${videoUrl}`);
+    })
+    .on('end', () => {
+      console.log(`✅ Conversion completed: ${outputFile}`);
+      res.download(outputFile, `video_${timestamp}.mp4`, (err) => {
+        if (err) {
+          console.error('❌ Error sending file:', err);
+        }
+        fs.unlink(outputFile, () => {});
+      });
+    })
+    .on('error', (err, stdout, stderr) => {
+      console.error('❌ FFmpeg error:', err.message);
+      console.error('📄 FFmpeg stderr:\n', stderr);
+
+      // Retry with MJPEG (for IP camera / droidcam style streams)
+      if (err.message.includes('Invalid data') || err.message.includes('format')) {
+        console.log('🔁 Retrying with input format "mjpeg"...');
+
+        ffmpeg(videoUrl)
+          .inputFormat('mjpeg')
+          .outputOptions([
+            '-vcodec', 'libx264',
+            '-acodec', 'aac',
+            '-pix_fmt', 'yuv420p'
+          ])
+          .on('start', () => console.log('🔁 Retry conversion started...'))
+          .on('end', () => {
+            console.log(`✅ Retry conversion completed: ${outputFile}`);
+            res.download(outputFile, `video_${timestamp}.mp4`, (err) => {
+              if (err) console.error('❌ Error sending file:', err);
+              fs.unlink(outputFile, () => {});
+            });
+          })
+          .on('error', (retryErr) => {
+            console.error('❌ Retry FFmpeg error:', retryErr.message);
+            res.status(500).send('Conversion failed. Check if the stream is valid or supported.');
+          })
+          .save(outputFile);
+
+      } else {
+        res.status(500).send('Conversion failed. Check if the video URL is public and valid.');
+      }
+    });
+
+  command.save(outputFile);
+});
+
+
+
+
+// --- Root Route ---
 app.get('/', (req, res) => {
   res.send('Backend is running!');
 });
 
-// Start server
+// --- Start Server ---
 const port = process.env.PORT || 5000;
 server.listen(port, () => {
   console.log(`🚀 Server with Socket.IO running at http://localhost:${port}`);

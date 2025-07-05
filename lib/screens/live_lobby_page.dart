@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:video_player/video_player.dart';
 
 class LiveLobbyPage extends StatefulWidget {
   const LiveLobbyPage({super.key});
@@ -8,81 +10,8 @@ class LiveLobbyPage extends StatefulWidget {
 }
 
 class _LiveLobbyPageState extends State<LiveLobbyPage> {
-  bool loading = true;
-  String? error;
-  List<Map<String, dynamic>> streams = [];
-
-  @override
-  void initState() {
-    super.initState();
-    fetchStreams();
-  }
-
-  Future<void> fetchStreams() async {
-    try {
-      // Replace with your actual backend URL
-      final response = await Uri.parse("http://localhost:5000/live-streams");
-      // Simulated placeholder logic for now
-      await Future.delayed(const Duration(seconds: 1));
-      setState(() {
-        streams = [
-          {
-            "roomId": "abc123",
-            "title": "Chai with Aniket",
-            "email": "aniket@example.com",
-            "startedAt": DateTime.now().toString(),
-            "viewers": 12
-          },
-          {
-            "roomId": "xyz789",
-            "title": "Flutter Tips Live",
-            "email": "dev@example.com",
-            "startedAt": DateTime.now().toString(),
-            "viewers": 7
-          },
-        ];
-        loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        error = "Failed to load streams";
-        loading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(color: Colors.red),
-        ),
-      );
-    }
-
-    if (error != null) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error, color: Colors.red, size: 40),
-              const SizedBox(height: 12),
-              Text(error!, style: const TextStyle(color: Colors.white)),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: fetchStreams,
-                child: const Text("Retry"),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -100,75 +29,150 @@ class _LiveLobbyPageState extends State<LiveLobbyPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: streams.isEmpty
-            ? Center(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('live_sessions')
+              .where('live', isEqualTo: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.red),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return const Center(
+                child: Text("Failed to load streams",
+                    style: TextStyle(color: Colors.white)),
+              );
+            }
+
+            final liveStreams = snapshot.data?.docs ?? [];
+
+            if (liveStreams.isEmpty) {
+              return const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Icon(Icons.tv_off, size: 50, color: Colors.grey),
                     SizedBox(height: 10),
                     Text("No live streams available",
-                        style: TextStyle(color: Colors.white70))
+                        style: TextStyle(color: Colors.white70)),
                   ],
                 ),
-              )
-            : GridView.builder(
-                itemCount: streams.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 16 / 10,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemBuilder: (context, index) {
-                  final stream = streams[index];
-                  return InkWell(
-                    onTap: () {
-                      // Navigate to view page using stream['roomId']
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.grey.shade900,
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Expanded(
-                            child: Center(
-                              child: Icon(Icons.videocam, size: 40, color: Colors.red),
-                            ),
-                          ),
-                          Text(
-                            stream["title"] ?? "Untitled",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            stream["email"] ?? "",
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Icon(Icons.circle, size: 10, color: Colors.red),
-                              Text(" ${stream['viewers']} watching",
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.white60)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+              );
+            }
+
+            return GridView.builder(
+              itemCount: liveStreams.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 1, // 1 per row to show full video
+                childAspectRatio: 16 / 9,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 12,
               ),
+              itemBuilder: (context, index) {
+                final data =
+                    liveStreams[index].data() as Map<String, dynamic>;
+                final streamUrl = data['streamUrl'];
+                final title = data['title'] ?? 'Untitled';
+                final host = data['host'] ?? 'Host';
+
+                return StreamCard(
+                  title: title,
+                  host: host,
+                  streamUrl: streamUrl,
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class StreamCard extends StatefulWidget {
+  final String title;
+  final String host;
+  final String streamUrl;
+
+  const StreamCard({
+    super.key,
+    required this.title,
+    required this.host,
+    required this.streamUrl,
+  });
+
+  @override
+  State<StreamCard> createState() => _StreamCardState();
+}
+
+class _StreamCardState extends State<StreamCard> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.network(widget.streamUrl)
+      ..initialize().then((_) {
+        setState(() => _isInitialized = true);
+        _controller.play();
+        _controller.setLooping(true);
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _isInitialized
+              ? AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: VideoPlayer(_controller),
+                )
+              : const Center(
+                  child: CircularProgressIndicator(color: Colors.red),
+                ),
+          const SizedBox(height: 8),
+          Text(
+            widget.title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            "Host: ${widget.host}",
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          const Row(
+            children: [
+              Icon(Icons.circle, size: 10, color: Colors.red),
+              SizedBox(width: 4),
+              Text("Live now",
+                  style: TextStyle(color: Colors.white60, fontSize: 12)),
+            ],
+          ),
+        ],
       ),
     );
   }

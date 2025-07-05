@@ -52,11 +52,14 @@ class _ChatRoomState extends State<ChatRoom> {
     socket!.on('newLiveStarted', (data) {
       setState(() {
         liveStreams.add(data);
-        messages.add({
-          'from': 'System',
-          'text': '${data['email']} just went live! Tap the 📺 icon to watch.',
-          'time': DateTime.now().toIso8601String(),
-        });
+messages.add({
+  'from': 'System',
+  'type': 'notification',
+  'text': '${data['email']} just went live! Tap the 📺 icon to watch.',
+  'time': DateTime.now().toIso8601String(),
+});
+
+
       });
     });
 
@@ -224,6 +227,21 @@ class _ChatRoomState extends State<ChatRoom> {
                 itemCount: messages.length,
                 itemBuilder: (_, i) {
                   final msg = messages[i];
+                  if (msg['type'] == 'notification') {
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        msg['text'],
+        style: const TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  );
+}
+
                   return Card(
                     color: msg['from'] == 'System'
                         ? Colors.purple.withOpacity(0.6)

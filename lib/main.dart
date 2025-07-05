@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
+// import 'package:webview_flutter/webview_flutter.dart';
+// import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
+import 'splash_screen.dart';
 
 
 
@@ -97,7 +98,8 @@ class OTTApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Colors.white),
         ),
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(),
+
       debugShowCheckedModeBanner: false,
     );
   }
@@ -150,28 +152,59 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
         builder: (context, child) {
           final t = _gradientController.value;
           return AppBar(
-            elevation: 8,
-            shadowColor: Colors.black45,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color.lerp(const Color(0xFF116466), const Color(0xFF00C9A7), t)!,
-                    Color.lerp(const Color(0xFF23272F), const Color(0xFF2C3531), 1 - t)!,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+  elevation: 8,
+  shadowColor: Colors.black45,
+  flexibleSpace: Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Color.lerp(const Color(0xFF116466), const Color(0xFF00C9A7), t)!,
+          Color.lerp(const Color(0xFF23272F), const Color(0xFF2C3531), 1 - t)!,
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+  ),
+  leading: IconButton(
+    icon: const Icon(Icons.menu),
+    onPressed: () {
+      _scaffoldKey.currentState!.openDrawer();
+    },
+  ),
+  title: const Text(
+    'BuzzingBea',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      letterSpacing: 1.2,
+    ),
+  ),
+  centerTitle: true,
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Container(
+        height: 46,
+        width: 46,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/app_logo.jpg', 
+              fit: BoxFit.contain, 
             ),
-            title: const Text('Marathi play'),
-            leading: IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                _scaffoldKey.currentState!.openDrawer();
-              },
-            ),
-          );
+          ),
+        ),
+      ),
+    ),
+  ],
+);
+
         },
       ),
     );

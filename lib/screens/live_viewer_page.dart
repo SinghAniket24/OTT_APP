@@ -11,12 +11,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:awesome_emoji_picker/awesome_emoji_picker.dart';
 
-// Flutter 3.27.3 • channel stable • https://github.com/flutter/flutter.git
-// Framework • revision c519ee916e (5 months ago) • 2025-01-21 10:32:23 -0800
-// Engine • revision e672b006cb
-// Tools • Dart 3.6.1 • DevTools 2.40.2
+
+
 
 
 class LiveViewerPage extends StatelessWidget {
@@ -327,7 +324,6 @@ class _VideoStreamPlayerState extends State<VideoStreamPlayer> {
     return Chewie(controller: _chewieController!);
   }
 }
-
 class InteractionSection extends StatefulWidget {
   final String streamUrl;
 
@@ -361,8 +357,11 @@ class _InteractionSectionState extends State<InteractionSection> {
       'reactions': FieldValue.arrayUnion([emoji])
     }, SetOptions(merge: true));
 
-    setState(() => _temporaryReaction = emoji);
+    setState(() {
+      _temporaryReaction = emoji;
+    });
 
+    // Hide emoji after 4 seconds
     Future.delayed(const Duration(seconds: 4), () {
       if (mounted) setState(() => _temporaryReaction = null);
     });
@@ -392,8 +391,7 @@ class _InteractionSectionState extends State<InteractionSection> {
       return;
     }
 
-    if (_lastCommentTime != null &&
-        now.difference(_lastCommentTime!) < const Duration(seconds: 5)) {
+    if (_lastCommentTime != null && now.difference(_lastCommentTime!) < const Duration(seconds: 5)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please wait before posting again")),
       );
@@ -455,7 +453,7 @@ class _InteractionSectionState extends State<InteractionSection> {
               ),
               child: Column(
                 children: [
-                  // Likes & Emoji Picker Toggle
+                  // Likes and emoji toggle
                   Padding(
                     padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 4),
                     child: Row(
@@ -487,19 +485,22 @@ class _InteractionSectionState extends State<InteractionSection> {
 
                   if (reactions.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-                      child: Wrap(
-                        spacing: 6.0,
-                        runSpacing: 4.0,
-                        children: reactions
-                            .map((e) => Text(e, style: const TextStyle(fontSize: 22)))
-                            .toList(),
+                      padding: const EdgeInsets.only(left: 24, right: 24, bottom: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 6.0,
+                          runSpacing: 4.0,
+                          children: reactions
+                              .map((e) => Text(e, style: const TextStyle(fontSize: 22)))
+                              .toList(),
+                        ),
                       ),
                     ),
 
                   const Divider(color: Colors.white54, height: 18, thickness: 0.7),
 
-                  // Comments
+                  // Comments Section
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -596,14 +597,10 @@ class _InteractionSectionState extends State<InteractionSection> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: const BorderSide(
-                                  color: Colors.deepPurpleAccent,
-                                  width: 2,
-                                ),
+                                    color: Colors.deepPurpleAccent, width: 2),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
+                                  horizontal: 16, vertical: 12),
                             ),
                             onSubmitted: (val) {
                               if (user != null) _handleComment(user);
@@ -619,8 +616,7 @@ class _InteractionSectionState extends State<InteractionSection> {
                             backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                                borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                           ),
                           child: const Text(
@@ -632,13 +628,14 @@ class _InteractionSectionState extends State<InteractionSection> {
                     ),
                   ),
 
-                  // 👍 Emoji Picker (awesome_emoji_picker)
+                  // Emoji Picker
                   if (_showEmojiPicker)
-                    SizedBox(
+                    Container(
                       height: 250,
+                      color: Colors.white, // Ensures emoji icons are visible
                       child: EmojiPicker(
-                        onEmojiTap: (category, emoji) {
-                          _addReaction(emoji.char); // use `char` to get emoji
+                        onEmojiSelected: (category, emoji) {
+                          _addReaction(emoji.emoji);
                           setState(() => _showEmojiPicker = false);
                         },
                       ),
@@ -649,7 +646,7 @@ class _InteractionSectionState extends State<InteractionSection> {
           },
         ),
 
-        // Temporary Reaction Overlay
+        // Reaction overlay (disappears after 4 seconds)
         if (_temporaryReaction != null)
           Positioned(
             bottom: 100,

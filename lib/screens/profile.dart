@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'subscriptions.dart'; // Your SubscriptionPage import
+import 'subscriptions.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,12 +15,14 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   // Profile info variables
-  String name = 'John Doe';
-  String gender = 'Male';
-  String country = 'USA';
-  String phoneNumber = '9876543210';
-  String email = 'john.doe@example.com';
-  String subscriptionPlan = 'Premium plan';
+String name = '';
+String gender = '';
+String country = '';
+String phoneNumber = '';
+String email = '';
+String subscriptionPlan = 'Basic';
+
+
 
   // TextEditingController for the edit fields
   final TextEditingController _nameController = TextEditingController();
@@ -31,13 +36,40 @@ class _ProfilePageState extends State<ProfilePage> {
   // For profile image
   File? _profileImage;
 
-  @override
-  void initState() {
-    super.initState();
-    _nameController.text = name;
-    _selectedGender = gender;
-    _selectedCountry = country;
+@override
+void initState() {
+  super.initState();
+  _fetchUserData();
+}
+Future<void> _fetchUserData() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final uid = user.uid;
+  final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+  if (doc.exists) {
+    final data = doc.data()!;
+    setState(() {
+      name = data['name'] ?? 'Not set';
+      gender = data['gender'] ?? 'Not set';
+      country = data['country'] ?? 'Not set';
+      phoneNumber = data['phone'] ?? 'Not set';
+      email = data['email'] ?? 'Not set';
+      // subscriptionPlan = data['subscriptionPlan'] ?? 'Free plan';
+        subscriptionPlan = 'Basic'; // <-- hardcoded
+      _nameController.text = name;
+      _selectedGender = gender;
+      _selectedCountry = country;
+
+      final path = data['profileImagePath'];
+      if (path != null && path.toString().isNotEmpty) {
+        _profileImage = File(path); // Only works if image was saved locally
+      }
+    });
   }
+}
+
 
   // Image picker logic
   Future<void> _pickImage() async {

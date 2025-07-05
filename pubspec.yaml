@@ -69,6 +69,7 @@ dependencies:
   webview_flutter: ^4.13.0
   webview_flutter_android: ^4.7.0
   emoji_picker_flutter: 4.2.0
+  dropdown_search: ^6.0.2
   
 
 
@@ -102,6 +103,7 @@ flutter:
        - assets/error.jpg
        - assets/background.jpg
        - assets/google_logo.jpg
+       - assets/app_logo.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

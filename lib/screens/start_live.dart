@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:uuid/uuid.dart';
-import 'live_host_page.dart'; // Replace with your actual host page
+import 'live_host_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class StartLivePage extends StatefulWidget {
   const StartLivePage({super.key});
@@ -42,24 +45,56 @@ class _StartLivePageState extends State<StartLivePage> {
       });
       socket.connect();
 
-      socket.onConnect((_) {
-        setState(() => status = "creating_room");
+socket.onConnect((_) async {
+  setState(() => status = "creating_room");
 
-        socket.emit('startLive', {
-          'email': 'user@example.com',
-          'title': 'My Live Stream',
+  // Emit socket event to create the live room on server
+  socket.emit('startLive', {
+    'email': 'user@example.com',
+    'title': 'My Live Stream',
+    'roomId': roomId,
+  });
+
+  // Get the current Firebase user
+  final user = FirebaseAuth.instance.currentUser;
+
+  // ✅ Send notification to chat room
+  if (user != null) {
+    await FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(roomId)
+        .collection('messages')
+        .add({
+          'sender': user.displayName ?? user.email ?? 'Host',
+          'text': '🔴 Live has started! Join now.',
+          'type': 'notification',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+    // ✅ Save live session details for viewers
+    await FirebaseFirestore.instance
+        .collection('live_sessions')
+        .doc(roomId)
+        .set({
           'roomId': roomId,
+          'title': 'My Live Stream',
+          'host': user.displayName ?? user.email ?? 'Host',
+          'live': true,
+          'startedAt': FieldValue.serverTimestamp(),
         });
+  }
 
-        Future.delayed(const Duration(seconds: 1), () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LiveHostPage(roomId: roomId),
-            ),
-          );
-        });
-      });
+  // Navigate to the host page
+  Future.delayed(const Duration(seconds: 1), () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LiveHostPage(roomId: roomId),
+      ),
+    );
+  });
+});
+
 
       socket.onConnectError((_) {
         throw Exception("Connection failed");
